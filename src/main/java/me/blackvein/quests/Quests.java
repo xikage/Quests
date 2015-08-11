@@ -3,9 +3,15 @@ package me.blackvein.quests;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -13,6 +19,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +48,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -57,6 +67,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -75,19 +86,6 @@ import com.herocraftonline.heroes.characters.classes.HeroClass;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-
-import java.lang.reflect.Constructor;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.UUID;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.inventory.meta.ItemMeta;
 
 public class Quests extends JavaPlugin implements ConversationAbandonedListener, ColorUtil {
 
@@ -616,10 +614,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
     }
 
     public void loadModule(File jar) {
-
-        try {
-
-            JarFile jarFile = new JarFile(jar);
+        try (JarFile jarFile = new JarFile(jar)) {
             Enumeration<JarEntry> e = jarFile.entries();
 
             URL[] urls = {new URL("jar:file:" + jar.getPath() + "!/")};
@@ -630,7 +625,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
             
             while (e.hasMoreElements()) {
 
-                JarEntry je = (JarEntry) e.nextElement();
+                JarEntry je = e.nextElement();
                 if (je.isDirectory() || !je.getName().endsWith(".class")) {
                     continue;
                 }
@@ -1795,7 +1790,7 @@ try{
             cs.sendMessage(GOLD + msg);
             for (String s : sortedMap.keySet()) {
 
-                int i = (Integer) sortedMap.get(s);
+                int i = sortedMap.get(s);
                 s = s.trim();
                 UUID id = UUID.fromString(s);
                 s = Bukkit.getOfflinePlayer(id).getName();
@@ -1936,7 +1931,7 @@ try{
 
         if (allowQuitting == true) {
 
-            if (((Player) player).hasPermission("quests.quit")) {
+            if (player.hasPermission("quests.quit")) {
 
                 if (args.length == 1) {
                     player.sendMessage(RED + Lang.get("COMMAND_QUIT_HELP"));
@@ -1987,7 +1982,7 @@ try{
     private void questsTake(final Player player, String[] args) {
         if (allowCommands == true) {
 
-            if (((Player) player).hasPermission("quests.take")) {
+            if (player.hasPermission("quests.take")) {
 
                 if (args.length == 1) {
 
@@ -2101,7 +2096,7 @@ try{
 
                                 if (player instanceof Conversable) {
 
-                                    if (((Player) player).isConversing() == false) {
+                                    if (player.isConversing() == false) {
 
                                         quester.questToTake = q.name;
 
@@ -2114,7 +2109,7 @@ try{
                                             player.sendMessage(msg);
                                         }
 
-                                        conversationFactory.buildConversation((Conversable) player).begin();
+                                        conversationFactory.buildConversation(player).begin();
 
                                     } else {
 

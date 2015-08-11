@@ -1,10 +1,9 @@
 name: Quests
 main: me.blackvein.quests.Quests
-version: ${project.version}-b${env.BUILD_NUMBER}
+version: ${project.version}${project.build.number}
 description: Player questing system
-website: http://dev.bukkit.org/server-mods/quests/
 dev-url: https://github.com/Blackvein/Quests/
-authors: [Blackvein, HappyPikachu]
+authors: [Blackvein, HappyPikachu, dmulloy2]
 softdepend: [Citizens, PhatLoots, Vault]
 permissions:
     quests.quest:

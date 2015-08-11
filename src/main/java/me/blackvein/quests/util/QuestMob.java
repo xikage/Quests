@@ -1,12 +1,11 @@
 package me.blackvein.quests.util;
 
+import java.util.Arrays;
+
 import me.blackvein.quests.Quests;
 
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_8_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_8_R1.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_8_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -90,11 +89,9 @@ public class QuestMob {
     }
 
     public void spawn() {
-
         World world = spawnLocation.getWorld();
 
         for (int i = 0; i < spawnAmounts; i++) {
-
             Entity entity = world.spawnEntity(spawnLocation, entityType);
 
             if (name != null) {
@@ -102,13 +99,13 @@ public class QuestMob {
                 ((LivingEntity) entity).setCustomNameVisible(true);
             }
 
-            for (int j = 0; j < 5; j++) {
-                if (inventory[j] != null) {
-                    ((CraftEntity) entity).getHandle().setEquipment(j, CraftItemStack.asNMSCopy(inventory[j]));
-                }
-            }
+            EntityEquipment eq = ((LivingEntity) entity).getEquipment();
 
-            EntityEquipment eq = ((CraftLivingEntity) entity).getEquipment();
+            ItemStack heldItem = inventory[0];
+            eq.setItemInHand(heldItem);
+
+            ItemStack[] armor = Arrays.copyOfRange(inventory, 1, inventory.length);
+            eq.setArmorContents(armor);
 
             if (dropChances[0] != null) {
                 eq.setItemInHandDropChance(dropChances[0]);
@@ -220,11 +217,12 @@ public class QuestMob {
         return qm;
     }
 
+    @Override
     public int hashCode() {
-    	assert false : "hashCode not designed";
-    	return 42; // any arbitrary constant will do
+        assert false : "hashCode not designed";
+        return 42; // any arbitrary constant will do
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if ((o instanceof QuestMob) == false) {
