@@ -177,8 +177,8 @@ public class Quest {
         return testRequirements(quester.getPlayer());
     }
 
-    @SuppressWarnings("deprecation")
-	public boolean testRequirements(Player player) {
+	@SuppressWarnings("deprecation") // Vault
+    public boolean testRequirements(Player player) {
 
         Quester quester = plugin.getQuester(player.getUniqueId());
         
@@ -272,7 +272,7 @@ public class Quest {
         }
 
         for (String q : blockQuests) {
-        	//TODO make sure this works
+        	// TODO make sure this works
         	Quest questObject = new Quest();
         	questObject.name = q;
             if (quester.completedQuests.contains(q) || quester.currentQuests.containsKey(questObject)) {
@@ -284,8 +284,8 @@ public class Quest {
 
     }
 
-    @SuppressWarnings("deprecation")
-	public void completeQuest(Quester q) {
+	@SuppressWarnings("deprecation") // Vault
+    public void completeQuest(Quester q) {
 
         Player player = plugin.getServer().getPlayer(q.id);
         q.hardQuit(this);

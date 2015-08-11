@@ -3,6 +3,7 @@ package me.blackvein.quests;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -80,6 +81,7 @@ import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.SkillType;
 import com.gmail.nossr50.util.player.UserManager;
+import com.google.common.base.Charsets;
 import com.herocraftonline.heroes.Heroes;
 import com.herocraftonline.heroes.characters.Hero;
 import com.herocraftonline.heroes.characters.classes.HeroClass;
@@ -145,34 +147,25 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
     @Override
     public void onEnable() {
-
-        /*if(getServer().getBukkitVersion().equalsIgnoreCase(validVersion) == false) {
-
-         getLogger().severe("Your current version of CraftBukkit is " + getServer().getBukkitVersion() + ", this version of Quests is built for version " + validVersion);
-         getLogger().severe("Disabling...");
-         getServer().getPluginManager().disablePlugin(this);
-         return;
-
-         }  */
         pListener = new PlayerListener(this);
         effListener = new NpcEffectThread(this);
         npcListener = new NpcListener(this);
         instance = this;
 
         this.conversationFactory = new ConversationFactory(this)
-                .withModality(false)
-                .withPrefix(new QuestsPrefix())
-                .withFirstPrompt(new QuestPrompt())
-                .withTimeout(acceptTimeout)
-                .thatExcludesNonPlayersWithMessage("Console may not perform this conversation!")
-                .addConversationAbandonedListener(this);
+            .withModality(false)
+            .withPrefix(new QuestsPrefix())
+            .withFirstPrompt(new QuestPrompt())
+            .withTimeout(acceptTimeout)
+            .thatExcludesNonPlayersWithMessage("Console may not perform this conversation!")
+            .addConversationAbandonedListener(this);
 
         this.NPCConversationFactory = new ConversationFactory(this)
-                .withModality(false)
-                .withFirstPrompt(new QuestAcceptPrompt(this))
-                .withTimeout(acceptTimeout)
-                .withLocalEcho(false)
-                .addConversationAbandonedListener(this);
+            .withModality(false)
+            .withFirstPrompt(new QuestAcceptPrompt(this))
+            .withTimeout(acceptTimeout)
+            .withLocalEcho(false)
+            .addConversationAbandonedListener(this);
 
         questFactory = new QuestFactory(this);
         eventFactory = new EventFactory(this);
@@ -202,8 +195,8 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
     private void defaultLangFile() {
         lang = new Lang(this);
         lang.initPhrases();
-        if (new File(this.getDataFolder(), "/lang/en.yml").exists() == false) {
-        	getLogger().info("Translation data not found, writing defaults to file.");
+        if (!new File(this.getDataFolder(), "/lang/en.yml").exists()) {
+            getLogger().info("Translation data not found, writing defaults to file.");
             lang.saveNewLang();
         } else {
             lang.loadLang();
@@ -221,8 +214,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
                 getLogger().log(Level.INFO, "" + Lang.getPhrases() + " Phrase(s) loaded.");
                 questers.putAll(getOnlineQuesters());
 
-                if(convertData) {
-
+                if (convertData) {
                     convertQuesters();
 
                     FileConfiguration config = getConfig();
@@ -239,11 +231,13 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
     }
 
     private void defaultDataFile() {
-        if (new File(this.getDataFolder(), "data.yml").exists() == false) {
-        	getLogger().info("Data file not found, writing default to file.");
-            FileConfiguration data = new YamlConfiguration();
+        if (!new File(this.getDataFolder(), "data.yml").exists()) {
+            getLogger().info("Data file not found, writing default to file.");
+
+            YamlConfiguration data = new YamlConfiguration();
             data.options().copyHeader(true);
             data.options().copyDefaults(true);
+
             try {
                 data.save(new File(this.getDataFolder(), "data.yml"));
             } catch (IOException e) {
@@ -254,15 +248,16 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         }
     }
 
-    @SuppressWarnings("deprecation")
-	private void defaultEventsFile() {
-        if (new File(this.getDataFolder(), "events.yml").exists() == false) {
-        	getLogger().info("Events data not found, writing defaults to file.");
-            FileConfiguration data = new YamlConfiguration();
+    private void defaultEventsFile() {
+        if (!new File(this.getDataFolder(), "events.yml").exists()) {
+            getLogger().info("Events data not found, writing defaults to file.");
+
+            YamlConfiguration data = new YamlConfiguration();
             data.options().copyHeader(true);
             data.options().copyDefaults(true);
+
             try {
-                data.load(this.getResource("events.yml"));
+                data.load(new InputStreamReader(getResource("events.yml"), Charsets.UTF_8));
                 data.save(new File(this.getDataFolder(), "events.yml"));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -272,14 +267,14 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         }
     }
 
-    @SuppressWarnings("deprecation")
-	private void defaultQuestsFile() {
-        if (new File(this.getDataFolder(), "quests.yml").exists() == false) {
+    private void defaultQuestsFile() {
+        if (!new File(this.getDataFolder(), "quests.yml").exists()) {
+            getLogger().info("Quest data not found, writing defaults to file.");
 
-        	getLogger().info("Quest data not found, writing defaults to file.");
-            FileConfiguration data = new YamlConfiguration();
+            YamlConfiguration data = new YamlConfiguration();
+
             try {
-                data.load(this.getResource("quests.yml"));
+                data.load(new InputStreamReader(getResource("quests.yml"), Charsets.UTF_8));
                 data.set("events", null);
                 data.save(new File(this.getDataFolder(), "quests.yml"));
             } catch (IOException e) {
@@ -291,13 +286,14 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         }
     }
 
-    @SuppressWarnings("deprecation")
-	private void defaultConfigFile() {
-        if (new File(this.getDataFolder(), "config.yml").exists() == false) {
-        	getLogger().info("Config not found, writing default to file.");
-            FileConfiguration config = new YamlConfiguration();
+    private void defaultConfigFile() {
+        if (!new File(this.getDataFolder(), "config.yml").exists()) {
+            getLogger().info("Config not found, writing default to file.");
+
+            YamlConfiguration config = new YamlConfiguration();
+
             try {
-                config.load(this.getResource("config.yml"));
+                config.load(new InputStreamReader(getResource("config.yml"), Charsets.UTF_8));
                 config.save(new File(this.getDataFolder(), "config.yml"));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -341,16 +337,16 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
     public String checkCommand(String cmd, String[] args) {
 
-        if(cmd.equalsIgnoreCase("quest") || args.length == 0) {
+        if (cmd.equalsIgnoreCase("quest") || args.length == 0) {
             return null;
         }
 
-        if(cmd.equalsIgnoreCase("quests")) {
+        if (cmd.equalsIgnoreCase("quests")) {
 
-            if(commands.containsKey(args[0].toLowerCase())) {
+            if (commands.containsKey(args[0].toLowerCase())) {
 
                 int min = commands.get(args[0].toLowerCase());
-                if(args.length < min)
+                if (args.length < min)
                     return getQuestsCommandUsage(args[0]);
                 else
                     return null;
@@ -359,12 +355,12 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
             return YELLOW + Lang.get("questsUnknownCommand");
 
-        } else if(cmd.equalsIgnoreCase("questsadmin") || cmd.equalsIgnoreCase("questadmin")) {
+        } else if (cmd.equalsIgnoreCase("questsadmin") || cmd.equalsIgnoreCase("questadmin")) {
 
-            if(adminCommands.containsKey(args[0].toLowerCase())) {
+            if (adminCommands.containsKey(args[0].toLowerCase())) {
 
                 int min = adminCommands.get(args[0].toLowerCase());
-                if(args.length < min)
+                if (args.length < min)
                     return getQuestadminCommandUsage(args[0]);
                 else
                     return null;
@@ -399,7 +395,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
                 getServer().getPluginManager().registerEvents(npcListener, this);
             }
         } catch (Exception e) {
-        	getLogger().warning("Legacy version of Citizens found. Citizens in Quests not enabled.");
+            getLogger().warning("Legacy version of Citizens found. Citizens in Quests not enabled.");
         }
 
         if (getServer().getPluginManager().getPlugin("WorldGuard") != null) {
@@ -423,11 +419,11 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         }
 
         if (!setupEconomy()) {
-        	getLogger().warning("Economy not found.");
+            getLogger().warning("Economy not found.");
         }
 
         if (!setupPermissions()) {
-        	getLogger().warning("Permissions not found.");
+            getLogger().warning("Permissions not found.");
         }
 
         vault = (Vault) getServer().getPluginManager().getPlugin("Vault");
@@ -435,16 +431,16 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
     @Override
     public void onDisable() {
+        getLogger().info("Saving Quester data.");
 
-    	getLogger().info("Saving Quester data.");
-        for (Player p : getServer().getOnlinePlayers()) {
-        	if (!questerBlacklist.contains(p.getUniqueId().toString())) {
-        		Quester quester = getQuester(p.getUniqueId());
-        		quester.saveData();
-        	}
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (!questerBlacklist.contains(player.getUniqueId().toString())) {
+                Quester quester = getQuester(player.getUniqueId());
+                quester.saveData();
+            }
         }
-        updateData();
 
+        updateData();
     }
 
     public LinkedList<Quest> getQuests() {
@@ -489,9 +485,9 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
             if (s.equalsIgnoreCase(Lang.get("yesWord"))) {
 
-                try{
+                try {
                     getQuester(player.getUniqueId()).takeQuest(getQuest(getQuester(player.getUniqueId()).questToTake), false);
-                }catch(Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 return Prompt.END_OF_CONVERSATION;
@@ -557,9 +553,9 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         }
 
         for (String s : config.getStringList("quester-blacklist")) {
-        	if (!s.equals("UUID")) {
-        		questerBlacklist.add(s);
-        	}
+            if (!s.equals("UUID")) {
+                questerBlacklist.add(s);
+            }
         }
 
         try {
@@ -617,12 +613,12 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
         try (JarFile jarFile = new JarFile(jar)) {
             Enumeration<JarEntry> e = jarFile.entries();
 
-            URL[] urls = {new URL("jar:file:" + jar.getPath() + "!/")};
+            URL[] urls = { new URL("jar:file:" + jar.getPath() + "!/") };
 
             ClassLoader cl = URLClassLoader.newInstance(urls, getClassLoader());
-            
+
             int count = 0;
-            
+
             while (e.hasMoreElements()) {
 
                 JarEntry je = e.nextElement();
@@ -670,14 +666,14 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
                 }
             }
 
-            if(count == 0) {
+            if (count == 0) {
                 getLogger().severe("Error: Unable to load module from file: " + jar.getName() + ", jar file is not a valid module!");
             }
 
         } catch (Exception e) {
-        	getLogger().severe("Error: Unable to load module from file: " + jar.getName());
+            getLogger().severe("Error: Unable to load module from file: " + jar.getName());
             if (debug) {
-            	getLogger().severe("Error log:");
+                getLogger().severe("Error log:");
                 e.printStackTrace();
             }
         }
@@ -742,16 +738,16 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
     @Override
     public boolean onCommand(final CommandSender cs, Command cmd, String label, String[] args) {
 
-    	if (cs instanceof Player) {
-    		if (checkQuester(((Player)cs).getUniqueId()) == true) {
-    			cs.sendMessage(RED + Lang.get("questBlacklisted"));
-    			return true;
-    		}
-    	}
+        if (cs instanceof Player) {
+            if (checkQuester(((Player) cs).getUniqueId()) == true) {
+                cs.sendMessage(RED + Lang.get("questBlacklisted"));
+                return true;
+            }
+        }
 
         String error = checkCommand(cmd.getName(), args);
 
-        if(error != null) {
+        if (error != null) {
             cs.sendMessage(error);
             return true;
         }
@@ -1108,9 +1104,9 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
                         int lastIndex = args.length - 1;
 
                         if (i == lastIndex) {
-                        	name = name + args[i].toLowerCase();
+                            name = name + args[i].toLowerCase();
                         } else {
-                        	name = name + args[i].toLowerCase() + " ";
+                            name = name + args[i].toLowerCase() + " ";
                         }
 
                     }
@@ -1129,7 +1125,7 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
 
                     for (Quest q : quester.currentQuests.keySet()) {
 
-                        if(q.getName().equalsIgnoreCase(questToGive.getName())) {
+                        if (q.getName().equalsIgnoreCase(questToGive.getName())) {
 
                             String msg = Lang.get("questsPlayerHasQuestAlready");
                             msg = msg.replaceAll("<player>", ITALIC + "" + GREEN + target.getName() + RESET + YELLOW);
@@ -1463,86 +1459,86 @@ public class Quests extends JavaPlugin implements ConversationAbandonedListener,
     }
 
     private void adminQuit(final CommandSender cs, String[] args) {
-try{
-        if (cs.hasPermission("quests.admin.*") || cs.hasPermission("quests.admin.quit")) {
+        try {
+            if (cs.hasPermission("quests.admin.*") || cs.hasPermission("quests.admin.quit")) {
 
-            Player target = null;
+                Player target = null;
 
-            for (Player p : getServer().getOnlinePlayers()) {
+                for (Player p : getServer().getOnlinePlayers()) {
 
-                if (p.getName().toLowerCase().contains(args[1].toLowerCase())) {
-                    target = p;
-                    break;
+                    if (p.getName().toLowerCase().contains(args[1].toLowerCase())) {
+                        target = p;
+                        break;
+                    }
+
                 }
 
-            }
+                if (target == null) {
 
-            if (target == null) {
-
-                cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
-
-            } else {
-
-                Quester quester = getQuester(target.getUniqueId());
-                if (quester.currentQuests.isEmpty()) {
-
-                    String msg = Lang.get("noCurrentQuest");
-                    msg = msg.replaceAll("<player>", target.getName());
-                    cs.sendMessage(YELLOW + msg);
+                    cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
 
                 } else {
 
-                    Quest found = findQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+                    Quester quester = getQuester(target.getUniqueId());
+                    if (quester.currentQuests.isEmpty()) {
 
-                    if (found == null) {
-                        cs.sendMessage(RED + Lang.get("questNotFound"));
-                        return;
+                        String msg = Lang.get("noCurrentQuest");
+                        msg = msg.replaceAll("<player>", target.getName());
+                        cs.sendMessage(YELLOW + msg);
+
+                    } else {
+
+                        Quest found = findQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
+
+                        if (found == null) {
+                            cs.sendMessage(RED + Lang.get("questNotFound"));
+                            return;
+                        }
+
+                        quester.hardQuit(found);
+
+                        String msg1 = Lang.get("questForceQuit");
+                        msg1 = msg1.replaceAll("<player>", GREEN + target.getName() + GOLD);
+                        msg1 = msg1.replaceAll("<quest>", PURPLE + found.name + GOLD);
+                        cs.sendMessage(GOLD + msg1);
+                        String msg2 = Lang.get("questForcedQuit");
+                        msg2 = msg2.replaceAll("<player>", GREEN + cs.getName() + GOLD);
+                        msg2 = msg2.replaceAll("<quest>", PURPLE + found.name + GOLD);
+                        target.sendMessage(GREEN + msg2);
+
+                        quester.saveData();
+                        quester.updateJournal();
+
                     }
-
-                    quester.hardQuit(found);
-
-                    String msg1 = Lang.get("questForceQuit");
-                    msg1 = msg1.replaceAll("<player>", GREEN + target.getName() + GOLD);
-                    msg1 = msg1.replaceAll("<quest>", PURPLE + found.name + GOLD);
-                    cs.sendMessage(GOLD + msg1);
-                    String msg2 = Lang.get("questForcedQuit");
-                    msg2 = msg2.replaceAll("<player>", GREEN + cs.getName() + GOLD);
-                    msg2 = msg2.replaceAll("<quest>", PURPLE + found.name + GOLD);
-                    target.sendMessage(GREEN + msg2);
-
-                    quester.saveData();
-                    quester.updateJournal();
 
                 }
 
+            } else {
+
+                cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
+
             }
-
-        } else {
-
-            cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
-
+        } catch (NullPointerException npe) {
+            System.out.println("Please report this full error in Github ticket #130");
+            npe.printStackTrace();
         }
-}catch(NullPointerException npe) {
-	System.out.println("Please report this full error in Github ticket #130");
-	npe.printStackTrace();
-}
     }
-    
+
     private void adminPurge(final CommandSender cs, String[] args) {
 
         if (cs.hasPermission("quests.admin.*") || cs.hasPermission("quests.admin.purge")) {
 
             Quester quester = getQuester(args[1]);
-            
+
             if (quester == null) {
-				cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
-				return;
-			}
+                cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
+                return;
+            }
 
             try {
-            	quester.hardClear();
-            	quester.saveData();
-            	quester.updateJournal();
+                quester.hardClear();
+                quester.saveData();
+                quester.updateJournal();
                 final File dataFolder = new File(this.getDataFolder(), "data/");
                 final File found = new File(dataFolder, quester.id + ".yml");
                 found.delete();
@@ -1550,14 +1546,14 @@ try{
 
                 String msg = Lang.get("questPurged");
                 if (Bukkit.getOfflinePlayer(quester.id).getName() != null) {
-                	msg = msg.replaceAll("<player>", GREEN + Bukkit.getOfflinePlayer(quester.id).getName() + GOLD);
+                    msg = msg.replaceAll("<player>", GREEN + Bukkit.getOfflinePlayer(quester.id).getName() + GOLD);
                 } else {
-                	msg = msg.replaceAll("<player>", GREEN + args[1] + GOLD);
+                    msg = msg.replaceAll("<player>", GREEN + args[1] + GOLD);
                 }
                 cs.sendMessage(GOLD + msg);
                 cs.sendMessage(PURPLE + " UUID: " + DARKAQUA + quester.id);
             } catch (Exception e) {
-            	getLogger().info("Data file does not exist for " + quester.id.toString());
+                getLogger().info("Data file does not exist for " + quester.id.toString());
             }
 
         } else {
@@ -1566,31 +1562,31 @@ try{
 
         }
     }
-    
+
     private void adminStats(final CommandSender cs, String[] args) {
-    	
+
         if (cs.hasPermission("quests.admin.*") && cs.hasPermission("quests.admin.stats")) {
-        	
+
             questsStats(cs, args);
-        	
+
         } else {
-        	
-        	cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
-        	
+
+            cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
+
         }
     }
 
     private void adminRemove(final CommandSender cs, String[] args) {
-    	
+
         if (cs.hasPermission("quests.admin.*") && cs.hasPermission("quests.admin.remove")) {
-        	
+
             Quester quester = getQuester(args[1]);
 
             if (quester == null) {
-				cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
-				return;
-			}
-            
+                cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
+                return;
+            }
+
             Quest toRemove = findQuest(MiscUtil.concatArgArray(args, 2, args.length - 1, ' '));
             if (toRemove == null) {
                 cs.sendMessage(RED + Lang.get("questNotFound"));
@@ -1599,23 +1595,23 @@ try{
 
             String msg = Lang.get("questRemoved");
             if (Bukkit.getOfflinePlayer(quester.id).getName() != null) {
-            	msg = msg.replaceAll("<player>", GREEN + Bukkit.getOfflinePlayer(quester.id).getName() + GOLD);
+                msg = msg.replaceAll("<player>", GREEN + Bukkit.getOfflinePlayer(quester.id).getName() + GOLD);
             } else {
-            	msg = msg.replaceAll("<player>", GREEN + args[1] + GOLD);
+                msg = msg.replaceAll("<player>", GREEN + args[1] + GOLD);
             }
             msg = msg.replaceAll("<quest>", ChatColor.DARK_PURPLE + toRemove.name + ChatColor.AQUA);
             cs.sendMessage(GOLD + msg);
             cs.sendMessage(PURPLE + " UUID: " + DARKAQUA + quester.id.toString());
 
             quester.hardRemove(toRemove);
-            
+
             quester.saveData();
             quester.updateJournal();
 
         } else {
-        	
-        	cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
-        	
+
+            cs.sendMessage(RED + Lang.get("questCmdNoPerms"));
+
         }
     }
 
@@ -1810,30 +1806,30 @@ try{
 
     private void questsStats(final CommandSender cs, String[] args) {
 
-    	Quester quester;
-    	
-    	if (args != null) {
-    		
-    		quester = getQuester(args[1]);
-    		
-			if (quester == null) {
-				cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
-				return;
-			} else if (Bukkit.getOfflinePlayer(quester.id).getName() != null) {
-				cs.sendMessage(GOLD + "- " + Bukkit.getOfflinePlayer(quester.id).getName() + " -");
-			} else {
-				cs.sendMessage(GOLD + "- " + args[1] + " -");
-			}
-    	} else {
-    		quester = getQuester(((Player)cs).getUniqueId());
-    		cs.sendMessage(GOLD + "- " + ((Player)cs).getName() + " -");
-    	}
-    	
+        Quester quester;
+
+        if (args != null) {
+
+            quester = getQuester(args[1]);
+
+            if (quester == null) {
+                cs.sendMessage(YELLOW + Lang.get("playerNotFound"));
+                return;
+            } else if (Bukkit.getOfflinePlayer(quester.id).getName() != null) {
+                cs.sendMessage(GOLD + "- " + Bukkit.getOfflinePlayer(quester.id).getName() + " -");
+            } else {
+                cs.sendMessage(GOLD + "- " + args[1] + " -");
+            }
+        } else {
+            quester = getQuester(((Player) cs).getUniqueId());
+            cs.sendMessage(GOLD + "- " + ((Player) cs).getName() + " -");
+        }
+
         cs.sendMessage(YELLOW + Lang.get("questPointsDisplay") + " " + PURPLE + quester.questPoints);
         if (quester.currentQuests.isEmpty()) {
             cs.sendMessage(YELLOW + Lang.get("currentQuest") + " " + PURPLE + Lang.get("none"));
         } else {
-           cs.sendMessage(YELLOW + Lang.get("currentQuest"));
+            cs.sendMessage(YELLOW + Lang.get("currentQuest"));
             for (Quest q : quester.currentQuests.keySet()) {
                 cs.sendMessage(PINK + " - " + PURPLE + q.name);
             }
@@ -1870,14 +1866,14 @@ try{
 
         Quester quester = getQuester(player.getUniqueId());
 
-        if(quester.hasJournal) {
+        if (quester.hasJournal) {
 
             Inventory inv = player.getInventory();
             ItemStack[] arr = inv.getContents();
-            for(int i = 0; i < arr.length; i++) {
+            for (int i = 0; i < arr.length; i++) {
 
-                if(arr[i] != null) {
-                    if(ItemUtil.isJournal(arr[i])) {
+                if (arr[i] != null) {
+                    if (ItemUtil.isJournal(arr[i])) {
                         inv.setItem(i, null);
                         break;
                     }
@@ -1887,7 +1883,7 @@ try{
             player.sendMessage(YELLOW + Lang.get("journalPutAway"));
             quester.hasJournal = false;
 
-        } else if(player.getItemInHand() == null || player.getItemInHand().getType().equals(Material.AIR)) {
+        } else if (player.getItemInHand() == null || player.getItemInHand().getType().equals(Material.AIR)) {
 
             ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
             ItemMeta meta = stack.getItemMeta();
@@ -1903,9 +1899,9 @@ try{
             Inventory inv = player.getInventory();
             ItemStack[] arr = inv.getContents();
             boolean given = false;
-            for(int i = 0; i < arr.length; i++) {
+            for (int i = 0; i < arr.length; i++) {
 
-                if(arr[i] == null) {
+                if (arr[i] == null) {
                     ItemStack stack = new ItemStack(Material.WRITTEN_BOOK, 1);
                     ItemMeta meta = stack.getItemMeta();
                     meta.setDisplayName(PINK + Lang.get("journalTitle"));
@@ -1918,10 +1914,10 @@ try{
 
             }
 
-            if(given) {
+            if (given) {
                 quester.hasJournal = true;
                 quester.updateJournal();
-            }else
+            } else
                 player.sendMessage(YELLOW + Lang.get("journalNoRoom"));
 
         }
@@ -2100,10 +2096,7 @@ try{
 
                                         quester.questToTake = q.name;
 
-                                        String s
-                                                = GOLD + "- " + PURPLE + quester.questToTake + GOLD + " -\n"
-                                                + "\n"
-                                                + RESET + getQuest(quester.questToTake).description + "\n";
+                                        String s = GOLD + "- " + PURPLE + quester.questToTake + GOLD + " -\n" + "\n" + RESET + getQuest(quester.questToTake).description + "\n";
 
                                         for (String msg : s.split("<br>")) {
                                             player.sendMessage(msg);
@@ -2429,25 +2422,25 @@ try{
 
             for (Quest q : getQuester(player.getUniqueId()).currentQuests.keySet()) {
 
-            	try {
-            	
-                if (getQuester(player.getUniqueId()).getQuestData(q).delayStartTime == 0) {
+                try {
 
-                    String msg = Lang.get("questObjectivesTitle");
-                    msg = msg.replaceAll("<quest>", q.name);
-                    player.sendMessage(ChatColor.GOLD + msg);
+                    if (getQuester(player.getUniqueId()).getQuestData(q).delayStartTime == 0) {
 
-                    for (String s : getQuester(player.getUniqueId()).getObjectivesReal(q)) {
+                        String msg = Lang.get("questObjectivesTitle");
+                        msg = msg.replaceAll("<quest>", q.name);
+                        player.sendMessage(ChatColor.GOLD + msg);
 
-                        player.sendMessage(s);
+                        for (String s : getQuester(player.getUniqueId()).getObjectivesReal(q)) {
+
+                            player.sendMessage(s);
+
+                        }
 
                     }
 
+                } catch (Exception e) {
+                    //TODO find source of NullPointerException from Github ticket #130
                 }
-                
-            	} catch (Exception e) {
-            		//TODO find source of NullPointerException from Github ticket #130
-            	}
 
             }
 
@@ -2464,9 +2457,9 @@ try{
         cs.sendMessage(RED + Lang.get("questAdminHelpTitle"));
         cs.sendMessage("");
         cs.sendMessage(DARKRED + "/questadmin" + RED + " " + Lang.get("COMMAND_QUESTADMIN_HELP"));
-        if(cs.hasPermission("quests.admin.*")){
-        	cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_STATS_HELP"));
-        	cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVE_HELP"));
+        if (cs.hasPermission("quests.admin.*")) {
+            cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_STATS_HELP"));
+            cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVE_HELP"));
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_QUIT_HELP"));
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_POINTS_HELP"));
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TAKEPOINTS_HELP"));
@@ -2479,49 +2472,49 @@ try{
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_REMOVE_HELP"));
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TOGGLEGUI_HELP"));
             cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_RELOAD_HELP"));
-        } else{
-        	if (cs.hasPermission("quests.admin.stats")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_STATS_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.give")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVE_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.quit")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_QUIT_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.points")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_POINTS_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.takepoints")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TAKEPOINTS_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.givepoints")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVEPOINTS_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.pointsall")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_POINTSALL_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.finish")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_FINISH_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.nextstage")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_NEXTSTAGE_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.setstage")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_SETSTAGE_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.purge")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_PURGE_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.remove")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_REMOVE_HELP"));
-        	}
-        	if (citizens != null && cs.hasPermission("quests.admin.togglegui")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TOGGLEGUI_HELP"));
-        	}
-        	if (cs.hasPermission("quests.admin.reload")) {
-        		cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_RELOAD_HELP"));
-        	}
+        } else {
+            if (cs.hasPermission("quests.admin.stats")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_STATS_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.give")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVE_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.quit")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_QUIT_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.points")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_POINTS_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.takepoints")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TAKEPOINTS_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.givepoints")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_GIVEPOINTS_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.pointsall")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_POINTSALL_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.finish")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_FINISH_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.nextstage")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_NEXTSTAGE_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.setstage")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_SETSTAGE_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.purge")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_PURGE_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.remove")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_REMOVE_HELP"));
+            }
+            if (citizens != null && cs.hasPermission("quests.admin.togglegui")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_TOGGLEGUI_HELP"));
+            }
+            if (cs.hasPermission("quests.admin.reload")) {
+                cs.sendMessage(DARKRED + "/questadmin " + RED + Lang.get("COMMAND_QUESTADMIN_RELOAD_HELP"));
+            }
 
         }
 
@@ -2617,12 +2610,12 @@ try{
             quester = new Quester(this);
             quester.id = id;
             if (quester.loadData() == false && !questerBlacklist.contains(id.toString())) {
-            	if (citizens != null) {
-            		if (citizens.getNPCRegistry().getByUniqueId(id) != null) {
-            			return quester;
-            		}
-            	}
-            	getLogger().info("Quester not found for UUID \"" + id.toString() + "\". Consider adding them to the Quester blacklist.");
+                if (citizens != null) {
+                    if (citizens.getNPCRegistry().getByUniqueId(id) != null) {
+                        return quester;
+                    }
+                }
+                getLogger().info("Quester not found for UUID \"" + id.toString() + "\". Consider adding them to the Quester blacklist.");
             } else {
                 if (debug == true && !questerBlacklist.contains(id.toString())) {
                     getLogger().log(Level.INFO, "Manual data retrieval succeeded for UUID \"" + id.toString() + "\"");
@@ -2636,29 +2629,29 @@ try{
     }
 
     public Quester getQuester(String name) {
-    	UUID id = null;
-    	Quester quester = null;
-    	
-    	for (Player p : Bukkit.getOnlinePlayers()) {
-        	if (p.getName().equalsIgnoreCase(name)) {
-        		id = p.getUniqueId();
-        		break;
-        	}
+        UUID id = null;
+        Quester quester = null;
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.getName().equalsIgnoreCase(name)) {
+                id = p.getUniqueId();
+                break;
+            }
         }
-    	
-    	try {
-    		if (id == null) {
-    			id = UUIDFetcher.getUUIDOf(name);
-    		}
-		} catch (Exception e) {
-			//Do nothing
-		}
-    	
-    	if (id != null) {
-    		quester = getQuester(id);
-    	}
-    	
-    	return quester;
+
+        try {
+            if (id == null) {
+                id = UUIDFetcher.getUUIDOf(name);
+            }
+        } catch (Exception e) {
+            //Do nothing
+        }
+
+        if (id != null) {
+            quester = getQuester(id);
+        }
+
+        return quester;
     }
 
     public Map<UUID, Quester> getOnlineQuesters() {
@@ -2744,9 +2737,7 @@ try{
                     if (location != null) {
                         quest.blockStart = location;
                     } else {
-                        skipQuestProcess(new String[]{
-                            "block-start: for Quest " + quest.name + " is not in proper location format!",
-                            "Proper location format is: \"WorldName x y z\""});
+                        skipQuestProcess(new String[] { "block-start: for Quest " + quest.name + " is not in proper location format!", "Proper location format is: \"WorldName x y z\"" });
                     }
 
                 }
@@ -2766,13 +2757,13 @@ try{
 
                     String item = config.getString("quests." + questName + ".gui-display");
                     try {
-                    	ItemStack stack = ItemUtil.readItemStack(item);
+                        ItemStack stack = ItemUtil.readItemStack(item);
 
-                    	if (stack != null) {
-                    		quest.guiDisplay = stack;
-                    	}
+                        if (stack != null) {
+                            quest.guiDisplay = stack;
+                        }
                     } catch (Exception e) {
-                    	instance.getLogger().warning(item + " in items: GUI Display in Quest " + quest.name + "is not properly formatted!");
+                        instance.getLogger().warning(item + " in items: GUI Display in Quest " + quest.name + "is not properly formatted!");
                     }
 
                 }
@@ -3000,27 +2991,27 @@ try{
         }
 
         if (getServer().getPluginManager().getPlugin("PhatLoots") != null) {
-        if (config.contains("quests." + questName + ".rewards.phat-loots")) {
+            if (config.contains("quests." + questName + ".rewards.phat-loots")) {
 
-            if (Quests.checkList(config.getList("quests." + questName + ".rewards.phat-loots"), String.class)) {
+                if (Quests.checkList(config.getList("quests." + questName + ".rewards.phat-loots"), String.class)) {
 
-                for (String loot : config.getStringList("quests." + questName + ".rewards.phat-loots")) {
+                    for (String loot : config.getStringList("quests." + questName + ".rewards.phat-loots")) {
 
-                	if (PhatLootsAPI.getPhatLoot(loot) == null) {
+                        if (PhatLootsAPI.getPhatLoot(loot) == null) {
 
-                		skipQuestProcess("" + loot + " in phat-loots: Reward in Quest " + quest.name + " is not a valid PhatLoot name!");
+                            skipQuestProcess("" + loot + " in phat-loots: Reward in Quest " + quest.name + " is not a valid PhatLoot name!");
 
-                	}
+                        }
 
+                    }
+
+                    quest.phatLootRewards.clear();
+                    quest.phatLootRewards.addAll(config.getStringList("quests." + questName + ".rewards.phat-loots"));
+
+                } else {
+                    skipQuestProcess("phat-loots: Reward in Quest " + quest.name + " is not a list of PhatLoots!");
                 }
-
-                quest.phatLootRewards.clear();
-                quest.phatLootRewards.addAll(config.getStringList("quests." + questName + ".rewards.phat-loots"));
-
-            } else {
-                skipQuestProcess("phat-loots: Reward in Quest " + quest.name + " is not a list of PhatLoots!");
             }
-        }
         }
 
         if (config.contains("quests." + questName + ".rewards.custom-rewards")) {
@@ -3125,9 +3116,7 @@ try{
                 }
 
                 if (failed) {
-                    skipQuestProcess(new String[]{
-                        "" + PINK + failedQuest + " inside quests: Requirement for Quest " + quest.name + " is not a valid Quest name!",
-                        "Make sure you are using the Quest name: value, and not the block name."});
+                    skipQuestProcess(new String[] { "" + PINK + failedQuest + " inside quests: Requirement for Quest " + quest.name + " is not a valid Quest name!", "Make sure you are using the Quest name: value, and not the block name." });
                 }
 
             } else {
@@ -3167,9 +3156,7 @@ try{
                 }
 
                 if (failed) {
-                    skipQuestProcess(new String[]{
-                        "" + failedQuest + " inside quests: Requirement for Quest " + quest.name + " is not a valid Quest name!",
-                        "Make sure you are using the Quest name: value, and not the block name."});
+                    skipQuestProcess(new String[] { "" + failedQuest + " inside quests: Requirement for Quest " + quest.name + " is not a valid Quest name!", "Make sure you are using the Quest name: value, and not the block name." });
                 }
 
             } else {
@@ -3265,7 +3252,7 @@ try{
                 }
 
                 if (!found) {
-                	getLogger().warning("Custom requirement \"" + name + "\" for Quest \"" + quest.name + "\" could not be found!");
+                    getLogger().warning("Custom requirement \"" + name + "\" for Quest \"" + quest.name + "\" could not be found!");
                     skipQuestProcess((String) null); // null bc we warn, not severe for this one
                 }
 
@@ -3287,14 +3274,14 @@ try{
     private void skipQuestProcess(String[] msgs) throws SkipQuest {
         for (String msg : msgs) {
             if (msg != null) {
-            	getLogger().severe(msg);
+                getLogger().severe(msg);
             }
         }
         throw new SkipQuest();
     }
 
     private void skipQuestProcess(String msg) throws SkipQuest {
-        skipQuestProcess(new String[]{msg});
+        skipQuestProcess(new String[] { msg });
     }
 
     private void populateCustomRewards(FileConfiguration config) {
@@ -3312,7 +3299,7 @@ try{
             }
 
             if (!found) {
-            	getLogger().warning("Custom reward \"" + name + "\" for Quest \"" + quest.name + "\" could not be found!");
+                getLogger().warning("Custom reward \"" + name + "\" for Quest \"" + quest.name + "\" could not be found!");
                 continue;
             }
 
@@ -3825,9 +3812,7 @@ try{
                                 y = Double.parseDouble(info[2]);
                                 z = Double.parseDouble(info[3]);
                             } catch (NumberFormatException e) {
-                                stageFailed(new String[]{
-                                    "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!",
-                                    "Proper location format is: \"WorldName x y z\""});
+                                stageFailed(new String[] { "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!", "Proper location format is: \"WorldName x y z\"" });
                             }
 
                             if (getServer().getWorld(info[0]) != null) {
@@ -3838,9 +3823,7 @@ try{
                             }
 
                         } else {
-                            stageFailed(new String[]{
-                                "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!",
-                                "Proper location format is: \"WorldName x y z\""});
+                            stageFailed(new String[] { "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!", "Proper location format is: \"WorldName x y z\"" });
                         }
 
                     }
@@ -3939,9 +3922,7 @@ try{
                                 y = Double.parseDouble(info[2]);
                                 z = Double.parseDouble(info[3]);
                             } catch (NumberFormatException e) {
-                                stageFailed(new String[]{
-                                    "" + loc + " inside locations-to-reach: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!",
-                                    "Proper location format is: \"WorldName x y z\""});
+                                stageFailed(new String[] { "" + loc + " inside locations-to-reach: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!", "Proper location format is: \"WorldName x y z\"" });
                             }
 
                             if (getServer().getWorld(info[0]) != null) {
@@ -3952,9 +3933,7 @@ try{
                             }
 
                         } else {
-                            stageFailed(new String[]{
-                                "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!",
-                                "Proper location format is: \"WorldName x y z\""});
+                            stageFailed(new String[] { "" + loc + " inside mobs-to-kill: inside Stage " + s2 + " of Quest " + quest.name + " is not in proper location format!", "Proper location format is: \"WorldName x y z\"" });
                         }
 
                     }
@@ -4183,7 +4162,7 @@ try{
                     }
 
                     if (found == null) {
-                    	getLogger().warning("Custom objective \"" + name + "\" for Stage " + s2 + " of Quest \"" + quest.name + "\" could not be found!");
+                        getLogger().warning("Custom objective \"" + name + "\" for Stage " + s2 + " of Quest \"" + quest.name + "\" could not be found!");
                         continue;
                     }
 
@@ -4204,9 +4183,9 @@ try{
                         getServer().getPluginManager().registerEvents(found, this);
 
                     } catch (Exception e) {
-                    	getLogger().warning("Failed to register events for custom objective \"" + name + "\" in Stage " + s2 + " of Quest \"" + quest.name + "\". Does the objective class listen for events?");
+                        getLogger().warning("Failed to register events for custom objective \"" + name + "\" in Stage " + s2 + " of Quest \"" + quest.name + "\". Does the objective class listen for events?");
                         if (debug) {
-                        	getLogger().warning("Error log:");
+                            getLogger().warning("Error log:");
                             e.printStackTrace();
                         }
                     }
@@ -4371,13 +4350,13 @@ try{
     }
 
     private void stageFailed(String msg) throws StageFailedException {
-        stageFailed(new String[]{msg});
+        stageFailed(new String[] { msg });
     }
 
     private void stageFailed(String[] msgs) throws StageFailedException {
         for (String msg : msgs) {
             if (msg != null) {
-            	getLogger().severe(msg);
+                getLogger().severe(msg);
             }
         }
         throw new StageFailedException();
@@ -4736,10 +4715,11 @@ try{
         return message;
 
     }
-    private static final String thou[] = {"", "M", "MM", "MMM"};
-    private static final String hund[] = {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
-    private static final String ten[] = {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
-    private static final String unit[] = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
+
+    private static final String thou[] = { "", "M", "MM", "MMM" };
+    private static final String hund[] = { "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM" };
+    private static final String ten[] = { "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" };
+    private static final String unit[] = { "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 
     public static String getNumeral(int i) {
 
@@ -4904,12 +4884,12 @@ try{
 
         for (String s : questerBlacklist) {
 
-        	try {
-        		UUID.fromString(s);
-        		return true;
-        	} catch (IllegalArgumentException e) {
+            try {
+                UUID.fromString(s);
+                return true;
+            } catch (IllegalArgumentException e) {
                 getLogger().warning(s + " in config.yml is not a valid UUID for quester-blacklist");
-        	}
+            }
 
         }
 
@@ -5132,9 +5112,9 @@ try{
         col = col.replace("COLOR_", "");
         DyeColor color = null;
         try {
-        	color = DyeColor.valueOf(col);
+            color = DyeColor.valueOf(col);
         } catch (IllegalArgumentException e) {
-        	//Do nothing
+            //Do nothing
         }
 
         return color != null ? color : getDyeColorLegacy(s);
@@ -5229,7 +5209,7 @@ try{
 
                 if (q.npcStart.getId() == npc.getId()) {
 
-                    if(ignoreLockedQuests == false || ignoreLockedQuests == true && q.testRequirements(quester) == true) {
+                    if (ignoreLockedQuests == false || ignoreLockedQuests == true && q.testRequirements(quester) == true) {
                         return true;
                     }
                 }
@@ -5356,7 +5336,7 @@ try{
 
                     @Override
                     public void run() {
-                    	getLogger().info("Done. Converting data...");
+                        getLogger().info("Done. Converting data...");
                         int converted = 0;
                         int failed = 0;
 
@@ -5368,7 +5348,7 @@ try{
                             idMap = fetcher.call();
 
                         } catch (Exception ex) {
-                        	getLogger().severe("Error retrieving data from Mojang account database. Error log:");
+                            getLogger().severe("Error retrieving data from Mojang account database. Error log:");
                             Logger.getLogger(Quests.class.getName()).log(Level.SEVERE, null, ex);
                             return;
                         }
@@ -5385,7 +5365,7 @@ try{
 
                                 config.load(found);
 
-                                if(config.contains("currentQuest")) {
+                                if (config.contains("currentQuest")) {
 
                                     LinkedList<String> currentQuests = new LinkedList<String>();
                                     currentQuests.add(config.getString("currentQuest"));
@@ -5421,24 +5401,24 @@ try{
                 });
 
             } else {
-            	getLogger().info("No Questers to convert!");
+                getLogger().info("No Questers to convert!");
             }
 
         } else {
-        	getLogger().info("Data folder does not exist!");
+            getLogger().info("Data folder does not exist!");
         }
 
     }
 
     public void addToBlacklist(UUID id) {
-    	List<String> blacklist = getConfig().getStringList("quester-blacklist");
-    	if (!blacklist.contains(id.toString())) {
-    		blacklist.add(id.toString());
-    		getConfig().set("quester-blacklist", blacklist);
-    		saveConfig();
-    	}
-    	if (!questerBlacklist.contains(id.toString())) {
-    		questerBlacklist.add(id.toString());
-    	}
+        List<String> blacklist = getConfig().getStringList("quester-blacklist");
+        if (!blacklist.contains(id.toString())) {
+            blacklist.add(id.toString());
+            getConfig().set("quester-blacklist", blacklist);
+            saveConfig();
+        }
+        if (!questerBlacklist.contains(id.toString())) {
+            questerBlacklist.add(id.toString());
+        }
     }
 }
