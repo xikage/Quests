@@ -1,14 +1,5 @@
 package me.blackvein.quests;
 
-import com.codisimus.plugins.phatloots.PhatLootsAPI;
-import com.codisimus.plugins.phatloots.loot.CommandLoot;
-import com.codisimus.plugins.phatloots.loot.LootBundle;
-import com.gmail.nossr50.datatypes.skills.SkillType;
-import com.gmail.nossr50.util.player.UserManager;
-import com.herocraftonline.heroes.characters.Hero;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,6 +16,15 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+
+import com.codisimus.plugins.phatloots.PhatLootsAPI;
+import com.codisimus.plugins.phatloots.loot.CommandLoot;
+import com.codisimus.plugins.phatloots.loot.LootBundle;
+import com.gmail.nossr50.datatypes.skills.SkillType;
+import com.gmail.nossr50.util.player.UserManager;
+import com.herocraftonline.heroes.characters.Hero;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public class Quest {
 	
@@ -177,8 +177,8 @@ public class Quest {
         return testRequirements(quester.getPlayer());
     }
 
-    @SuppressWarnings("deprecation")
-	public boolean testRequirements(Player player) {
+	@SuppressWarnings("deprecation") // Vault
+    public boolean testRequirements(Player player) {
 
         Quester quester = plugin.getQuester(player.getUniqueId());
         
@@ -272,7 +272,7 @@ public class Quest {
         }
 
         for (String q : blockQuests) {
-        	//TODO make sure this works
+        	// TODO make sure this works
         	Quest questObject = new Quest();
         	questObject.name = q;
             if (quester.completedQuests.contains(q) || quester.currentQuests.containsKey(questObject)) {
@@ -284,8 +284,8 @@ public class Quest {
 
     }
 
-    @SuppressWarnings("deprecation")
-	public void completeQuest(Quester q) {
+	@SuppressWarnings("deprecation") // Vault
+    public void completeQuest(Quester q) {
 
         Player player = plugin.getServer().getPlayer(q.id);
         q.hardQuit(this);
@@ -508,7 +508,7 @@ public class Quest {
                 String message = found.getRewardName();
 
                 for (String key : datamap.keySet()) {
-                    message = message.replaceAll("%" + ((String) key) + "%", ((String) datamap.get(key)));
+                    message = message.replaceAll("%" + (key) + "%", ((String) datamap.get(key)));
                 }
                 player.sendMessage("- " + ChatColor.GOLD + found.getRewardName());
                 found.giveReward(player, customRewards.get(s));
@@ -530,8 +530,7 @@ public class Quest {
 
     }
 
-    @SuppressWarnings("deprecation")
-	public void failQuest(Quester q) {
+    public void failQuest(Quester q) {
 
         Player player = plugin.getServer().getPlayer(q.id);
 
